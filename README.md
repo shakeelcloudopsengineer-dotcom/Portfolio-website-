@@ -1,150 +1,59 @@
-☁️ AWS Static Website Hosting — S3 + CloudFront
+# Portfolio Website — Hosted on AWS
 
-Show Image
-Show Image
-Show Image
+Live site → https://d3co6jb40mmso7.cloudfront.net
 
+---
 
-🌐 Live URL: https://d3co6jb40mmso7.cloudfront.net
+What is this project?
 
+This is my personal portfolio website hosted entirely on AWS. I built this to get hands-on experience with cloud hosting instead of just reading about it. The site runs on S3 and CloudFront — no traditional web server, no EC2, no monthly server bill.
 
+---
+ How it works
 
+The HTML file sits in a private S3 bucket. Nobody can access that bucket directly from the internet. CloudFront sits in front of it and serves the website to users over HTTPS. That's it.
 
-📌 Project Overview
+```
+You (browser)  →  CloudFront  →  S3 bucket (private)
+```
 
-This project demonstrates how to host a secure, fast, and globally available static website on AWS using Amazon S3 and Amazon CloudFront.
+The reason I kept S3 private is simple — there's no reason for anyone to hit S3 directly. CloudFront handles everything: caching, HTTPS, and fast delivery from edge locations closer to the user.
 
-The portfolio website is served over HTTPS with CloudFront acting as a CDN (Content Delivery Network), while the S3 bucket remains completely private — accessible only through CloudFront using Origin Access Control (OAC).
+---
+ What I used
 
+- **S3** — stores the index.html file
+- **CloudFront** — serves it to the world over HTTPS
+- **Origin Access Control (OAC)** — makes sure only CloudFront can read from S3
+- **S3 Bucket Policy** — enforces the OAC rule at the bucket level
 
-🏗️ Architecture
+---
+ Why CloudFront instead of just making S3 public?
 
-User Browser
-     │
-     ▼
-Amazon CloudFront  ◄──── HTTPS + CDN + Global Edge Locations
-     │
-     │  (Origin Access Control - OAC)
-     ▼
-Amazon S3 Bucket   ◄──── Private Bucket (No public access)
-  index.html
+A few reasons:
 
+1. Public S3 buckets are a bad habit. Most data breaches involving S3 happen because someone made a bucket public that shouldn't be.
+2. CloudFront gives you HTTPS for free. S3 static hosting doesn't support HTTPS on its own.
+3. CloudFront caches your content at edge locations — so someone opening the site from Europe doesn't have to wait for a response from Mumbai.
 
-⚙️ AWS Services Used
+---
 
-ServicePurposeAmazon S3Stores the website files (HTML, CSS) in a private bucketAmazon CloudFrontDelivers content globally via edge locations with HTTPSOrigin Access Control (OAC)Restricts S3 access — only CloudFront can read the filesS3 Bucket PolicyIAM policy that enforces OAC securityAWS ACMProvides free SSL/TLS certificate for HTTPS
+ Setting it up
+Nothing fancy here. I created the bucket in Mumbai region, uploaded the HTML file, then created a CloudFront distribution pointing to it with OAC enabled. AWS generates the bucket policy for you — you just paste it in.
 
+One thing that caught me off guard: after creating the distribution, I got an AccessDenied error. Turned out the bucket policy wasn't applied automatically even though the console said it would be. Fixed it by adding the policy manually. Worth knowing if you're building this yourself.
 
-🔐 Security Design
+---
 
+ Cost
 
-✅ S3 bucket has Block All Public Access enabled
-✅ No S3 static website hosting — bucket is purely private storage
-✅ OAC (Origin Access Control) ensures only CloudFront can fetch files
-✅ All traffic served over HTTPS — HTTP redirects to HTTPS automatically
-✅ Bucket policy uses least privilege — only s3:GetObject allowed
+Basically zero. S3 and CloudFront both have generous free tiers. For a portfolio site with low traffic, you're looking at a few cents a month at most — probably nothing.
 
-
-
-🚀 Step-by-Step Deployment
-
-Step 1 — Create S3 Bucket
-
-- Bucket name: shakeel-portfolio-2024
-- Region: ap-south-1 (Mumbai)
-- Block ALL public access: Enabled
-- Versioning: Disabled
-
-Step 2 — Upload Website Files
-
-- Upload index.html to the bucket root
-
-Step 3 — Create CloudFront Distribution
-
-- Origin: S3 bucket
-- Origin Access: OAC (Origin Access Control)
-- Viewer Protocol Policy: Redirect HTTP to HTTPS
-- Default Root Object: index.html
-- WAF: Disabled (cost saving for dev)
-
-Step 4 — Update S3 Bucket Policy
-
-json{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "AllowCloudFrontAccess",
-            "Effect": "Allow",
-            "Principal": {
-                "Service": "cloudfront.amazonaws.com"
-            },
-            "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::shakeel-portfolio-2024/*",
-            "Condition": {
-                "StringEquals": {
-                    "AWS:SourceArn": "arn:aws:cloudfront::535337619381:distribution/EMD9RINSGXZ73"
-                }
-            }
-        }
-    ]
-}
-
-Step 5 — Test
-
-- Open https://d3co6jb40mmso7.cloudfront.net
-- Verify HTTPS padlock in browser
-- Check x-cache: Hit from cloudfront in response headers
-
-
-💡 Key Concepts Demonstrated
-
-What is OAC?
-
-
-Origin Access Control is a CloudFront feature that signs every request to S3. S3 bucket policy only allows requests that are signed by your specific CloudFront distribution — blocking all direct access attempts.
+---
 
 
 
-Why CloudFront instead of S3 direct hosting?
+## About me
 
+I'm Mohamed Shakeel, a cloud engineer based in India. Now I'm building real hands-on experience rather than just collecting certifications.
 
-S3 direct hosting requires public bucket access (security risk), has no HTTPS on custom domains, and no global caching. CloudFront solves all three problems.
-
-
-
-What happens when I update my website?
-
-
-Upload new file to S3, then create a CloudFront invalidation for /* to clear the cache so users see the latest version immediately.
-
-
-
-
-📊 Cost Breakdown
-
-ServiceFree TierCost After Free TierS3 Storage5 GB free~$0.023/GB/monthS3 Requests20,000 GET free~$0.0004/1000 requestsCloudFront1 TB transfer free~$0.0085/GBTotal (this project)~$0/monthVery low
-
-
-🧠 What I Learned
-
-
-How to architect a secure static website on AWS
-Difference between S3 public hosting vs CloudFront with OAC
-How CloudFront edge caching works and how to invalidate cache
-Writing least-privilege S3 bucket policies
-Importance of HTTPS and how CloudFront + ACM enables it for free
-
-
-
-🗂️ Project Structure
-
-shakeel-portfolio/
-│
-├── index.html          # Main portfolio webpage
-└── README.md           # This file
-
-
-👨‍💻 Author
-
-Mohamed Shakeel
-Cloud Engineer | AWS Enthusiast | HCLTech
